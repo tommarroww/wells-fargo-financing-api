@@ -28,9 +28,9 @@ $WellsFargo = new WF\WellsFargoC(
 
 It works best to define the **Merchant Number**, **Username**, and **Password** in the configuration file of your application.
 
-$accountNumber is typically supplied the customer when a purchase is made.
+**$accountNumber** is typically supplied the customer when a purchase is made.
 
-These properties can be set or later as follows:
+These properties can be set or changed later as follows:
 
 ~~~~
 use WellsFargo as WF;
@@ -75,14 +75,14 @@ else
 Both methods take arguments in this order:
 1. Amount between 0.00 and 99,999,999.99
 2. Plan Number between 1000 and 9999
-3. Ticket Number less than 13 characters (optional - Best used for passing the order number)
+3. Ticket Number <= 12 characters (optional - Best used for passing the order number)
 
-If the transaction fails for any reason, 'false' will be returned.  To retrieve the errors call $WellsFargo->getErrors().  If more than one transaction has been sent, the errors for the most recent transaction will be returned.  To retrieve errors from other transactions, pass an integer >= 0.  The method will return a dictionary of all the errors that occurred.  For example:
+If the transaction fails for any reason, ***false*** will be returned.  To retrieve the errors call ***$WellsFargo->getErrors()***.  If more than one transaction has been sent, the errors for the most recent transaction will be returned.  To retrieve errors from other transactions, pass an integer >= 0.  The method will return a dictionary of all the errors that occurred.  For example:
 
 ~~~~
 array(2) {
   ["ticketNumber"]=>
-  string(35) "Ticket number must be less than 12.",
+  string(35) "Ticket number must be less than 12 characters.",
   ["returnStatus"]=>
   string(11) "AUTH DENIED"
 }
@@ -120,16 +120,16 @@ array(11) {
 
 ### Properties
 These properties may be set or changed at any time:
-- accountNumber,
-- dealerId,
-- locale,
-  - 'en_CA',
-  - 'en_US' (default),
+- accountNumber
+- dealerId
+- locale
+  - 'en_CA'
+  - 'en_US' (default)
   - 'fr_CA'
-- merchantNumber,
-- password,
-- username,
+- merchantNumber
+- password
+- username
 - wsdlUrlToUse
   - 'production'
   - 'test' (default)
-  - May also be set by defining the global: define('WELLS_FARGO_WSDL_URL_TO_USE', 'test')
+  - May also be set by defining the global: define('WELLS_FARGO_WSDL_URL_TO_USE' 'test')
