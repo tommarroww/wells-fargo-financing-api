@@ -133,3 +133,6 @@ These properties may be set or changed at any time:
   - 'production'
   - 'test' (default)
   - May also be set by defining the global: define('WELLS_FARGO_WSDL_URL_TO_USE' 'test')
+
+## Data Sanitization and Error Handling
+All data is sanitized before it is sent to Wells Fargo.  It is also tested to verify that it meets the general requirements as specified by Wells Fargo.  If any data is not valid, an error is generated describing why and **_false_** is returned.
