@@ -77,7 +77,7 @@ Both methods take arguments in this order:
 2. Plan Number between 1000 and 9999
 3. Ticket Number <= 12 characters (optional - Best used for passing the order number)
 
-If the transaction fails for any reason, ***false*** will be returned.  To retrieve the errors call ***WellsFargo->getErrors()***.  If more than one transaction has been sent, the errors for the most recent transaction will be returned.  To retrieve errors from other transactions, pass an integer >= 0.  The method will return a dictionary of all the errors that occurred.  For example:
+If the transaction fails for any reason, **_false_** will be returned.  To retrieve the errors call **_WellsFargo->getErrors()_**.  If more than one transaction has been sent, the errors for the most recent transaction will be returned.  To retrieve errors from other transactions, pass an integer >= 0.  The method will return a dictionary of all the errors that occurred.  For example:
 
 ~~~~
 array(2) {
