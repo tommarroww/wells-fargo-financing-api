@@ -11,26 +11,41 @@ The API can manage these types of transactions:
 use WellsFargo as WF;
 
 define('SERVER_ROOT', '/home/user/littletzar/');
-define('WELLS_FARGO_MERCHANT_NUMBER', '1234567890');
-define('WELLS_FARGO_PASSWORD', 'pi47*kl');
-define('WELLS_FARGO_USERNAME', 'm67543');
 
 require SERVER_ROOT.'addons/wells-fargo/wells-fargo.class.php';
 
 $WellsFargo = new WF\WellsFargoC(
 [
   'accountNumber' => $accountNumber,
-  'merchantNumber' => WELLS_FARGO_MERCHANT_NUMBER,
-  'password' => WELLS_FARGO_PASSWORD,
-  'username' => WELLS_FARGO_USERNAME,
+  'merchantNumber' => 1234567890,
+  'password' => 'pi47*kl',
+  'username' => 'm67543'
 ]);
 ~~~~
-
-It works best to define the **Merchant Number**, **Username**, and **Password** in the configuration file of your application.
 
 **$accountNumber** is typically supplied the customer when a purchase is made.
 
 These properties can be set or changed later as follows:
+
+~~~~
+use WellsFargo as WF;
+
+define('SERVER_ROOT', '/home/user/littletzar/');
+
+require SERVER_ROOT.'addons/wells-fargo/wells-fargo.class.php';
+
+$WellsFargo = new \WellsFargoC();
+
+$WellsFargo->setter(
+[
+  'accountNumber' => $accountNumber,
+  'merchantNumber' => 1234567890,
+  'password' => 'pi47*kl',
+  'username' => 'm67543'
+]);
+~~~~
+
+It works best to define the **Merchant Number**, **Username**, and **Password** in the configuration file of your application.  Then the only thing that needs to be supplied is the variable transaction data.
 
 ~~~~
 use WellsFargo as WF;
@@ -42,14 +57,9 @@ define('WELLS_FARGO_USERNAME', 'm67543');
 
 require SERVER_ROOT.'addons/wells-fargo/wells-fargo.class.php';
 
-$WellsFargo = new \WellsFargoC();
-
-$WellsFargo->setter(
+$WellsFargo = new WF\WellsFargoC(
 [
-  'accountNumber' => $accountNumber,
-  'merchantNumber' => WELLS_FARGO_MERCHANT_NUMBER,
-  'password' => WELLS_FARGO_PASSWORD,
-  'username' => WELLS_FARGO_USERNAME,
+  'accountNumber' => $accountNumber
 ]);
 ~~~~
 
@@ -127,8 +137,11 @@ These properties may be set or changed at any time:
   - 'en_US' (default)
   - 'fr_CA'
 - merchantNumber
+  - May be set by defining the global: define('WELLS_FARGO_MERCHANT_NUMBER' '1234567890')
 - password
+  - May be set by defining the global: define('WELLS_FARGO_PASSWORD' 'pi47*kl')
 - username
+  - May be set by defining the global: define('WELLS_FARGO_USERNAME' 'm67543')
 - wsdlUrlToUse
   - 'production'
   - 'test' (default)

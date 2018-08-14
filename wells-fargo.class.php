@@ -190,7 +190,7 @@ class WellsFargoC
 
     //ticket number
     if(strlen($ticketNumber) > $this->ticketNumberStringLengthMax)
-      $this->errors[$this->requestI]['ticketNumber'] = 'Ticket number must be less than '.$this->ticketNumberStringLengthMax.'.';
+      $this->errors[$this->requestI]['ticketNumber'] = 'Ticket number '.$ticketNumber.' must be less than '.$this->ticketNumberStringLengthMax.' characters.';
 
     if($this->errors[$this->requestI])
       return false;
@@ -236,7 +236,7 @@ class WellsFargoC
       $this->errors[$this->requestI]['locale'] = 'Invalid locale.  Possible locale\'s are '.implode(', ', $this->localeOptions).'.';
 
     //merchant number
-    if($this->merchantNumber)
+    if($this->merchantNumber || (defined('WELLS_FARGO_MERCHANT_NUMBER') && ($this->merchantNumber = WELLS_FARGO_MERCHANT_NUMBER)))
     {
       $this->merchantNumber = FormatC::number($this->merchantNumber);
 
@@ -253,23 +253,29 @@ class WellsFargoC
       $this->errors[$this->requestI]['merchantNumber'] = 'A merchant number must be supplied.';
 
     //password
+    if(!$this->password && defined('WELLS_FARGO_PASSWORD'))
+      $this->password = WELLS_FARGO_PASSWORD;
+
     if(!strlen($this->password))
       $this->errors[$this->requestI]['password'] = 'A password has not been set.';
     else if(!strlen(preg_replace('/[\s]+/', '', $this->password)))
       $this->errors[$this->requestI]['password'] = 'Invalid password.';
 
     //username
+    if(!$this->username && defined('WELLS_FARGO_USERNAME'))
+      $this->username = WELLS_FARGO_USERNAME;
+
     if(!strlen($this->username))
       $this->errors[$this->requestI]['username'] = 'A username has not been set.';
     else if(!strlen(preg_replace('/[\s]+/', '', $this->username)))
       $this->errors[$this->requestI]['username'] = 'Invalid username.';
 
     //wsdl url
-    if($this->wsdlUrlToUse == 'production')
+    if(strtolower($this->wsdlUrlToUse) == 'production')
       $this->wsdlUrl = $this->wsdlUrlProduction;
-    else if($this->wsdlUrlToUse == 'test')
+    else if(strtolower($this->wsdlUrlToUse) == 'test')
       $this->wsdlUrl = $this->wsdlUrlTest;
-    else if(defined('WELLS_FARGO_WSDL_URL_TO_USE') == 'production')
+    else if(defined('WELLS_FARGO_WSDL_URL_TO_USE') && ($this->wsdlUrlToUse = WELLS_FARGO_WSDL_URL_TO_USE) && strtolower($this->wsdlUrlToUse) == 'production')
       $this->wsdlUrl = $this->wsdlUrlProduction;
     else
       $this->wsdlUrl = $this->wsdlUrlTest;
@@ -403,6 +409,9 @@ class WellsFargoC
           break;
         case 'A0':
           $this->errors[$this->requestI]['returnStatus'] = array_value('transactionMessage', $response);
+
+          if($this->errors[$this->requestI]['returnStatus'] == 'AUTH DENIED')
+            $this->errors[$this->requestI]['returnStatus'] = 'Transaction was declined.  Please verify the account number or use a different one and try again.';
           break;
         case 'A2':
           $this->errors[$this->requestI]['returnStatus'] = array_value('transactionMessage', $response);
