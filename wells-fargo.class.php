@@ -9,6 +9,7 @@
 
 namespace WellsFargo;
 
+require_once dirname(__FILE__).'/file.class.php';
 require_once dirname(__FILE__).'/format.class.php';
 
 /**
@@ -16,7 +17,7 @@ require_once dirname(__FILE__).'/format.class.php';
 *
 * @author Joshua Dale
 * @created 20180810
-* @modified 20180813
+* @modified 20180815
 */
 
 class WellsFargoC
@@ -42,6 +43,8 @@ class WellsFargoC
   ];
   protected $planNumberMax = 9999;
   protected $planNumberMin = 1000;
+  protected $requestDirectoryDefault = 'requests/'; //directory inside wells-fargo directory
+  protected $responseDirectoryDefault = 'responses/'; //directory inside wells-fargo directory
   protected $settableProperties =
   [
     'accountNumber',
@@ -49,6 +52,10 @@ class WellsFargoC
     'locale',
     'merchantNumber',
     'password',
+    'recordRequest',
+    'recordRequestDirectory',
+    'recordResponse',
+    'recordResponseDirectory',
     'username',
     'wsdlUrlToUse'
   ];
@@ -63,16 +70,48 @@ class WellsFargoC
   protected $locale = null;
   protected $merchantNumber = null;
   protected $password = null;
+  protected $recordRequest = 'directory';
+  protected $recordResponse = 'directory';
+  protected $requestDirectory = null;
+  protected $responseDirectory = null;
   protected $username = null;
   protected $wsdlUrlToUse = null;
 
   //initialize non-settable properties
   protected $errors = []; //list dictionary of errors
+  protected $requests = [];  //list dictionary of requests
   protected $responses = [];  //list dictionary of response
-  protected $requrestI = -1; //index of requtes
+  protected $requrestI = -1; //index of requests
+  protected $unique = null; //unique value created for every request
+
+  /*****************
+  * Public Methods *
+  *****************/
 
   public function __construct($properties = null)
   {
+    //set defined properties
+    if(defined('WELLS_FARGO_PASSWORD'))
+      $this->password = WELLS_FARGO_PASSWORD;
+
+    if(defined('WELLS_FARGO_RECORD_REQUEST'))
+      $this->recordRequest = WELLS_FARGO_RECORD_REQUEST;
+
+    if(defined('WELLS_FARGO_RECORD_RESPONSE'))
+      $this->recordResponse = WELLS_FARGO_RECORD_RESPONSE;
+
+    if(defined('WELLS_FARGO_REQUEST_DIRECTORY'))
+      $this->requestDirectory = WELLS_FARGO_REQUEST_DIRECTORY;
+
+    if(defined('WELLS_FARGO_RESPONSE_DIRECTORY'))
+      $this->responseDirectory = WELLS_FARGO_RESPONSE_DIRECTORY;
+
+    if(defined('WELLS_FARGO_USERNAME'))
+      $this->username = WELLS_FARGO_USERNAME;
+
+    if(defined('WELLS_FARGO_WSDL_URL_TO_USE'))
+      $this->wsdlUrlToUse = WELLS_FARGO_WSDL_URL_TO_USE;
+
     $this->setter($properties);
   }
 
@@ -91,7 +130,7 @@ class WellsFargoC
   }
 
   /**
-  * This methods gets the errors for the last request.
+  * This methods gets the errors for the requested or last request.
   */
 
   public function getErrors($i = null)
@@ -118,6 +157,34 @@ class WellsFargoC
   }
 
   /**
+  * This methods gets the request for the requested or last request.
+  */
+
+  public function getRequest($i = null)
+  {
+    $i = FormatC::number($i, false, false, $this->requestI);
+
+    if(array_key_exists($i, $this->requests))
+      return $this->requests[$i];
+
+    return 'Request for request '.$i.' not found.';
+  }
+
+  /**
+  * This methods gets the response for the requested or last request.
+  */
+
+  public function getResponse($i = null)
+  {
+    $i = FormatC::number($i, false, false, $this->requestI);
+
+    if(array_key_exists($i, $this->responses))
+      return $this->responses[$i];
+
+    return 'Response for request '.$i.' not found.';
+  }
+
+  /**
   * This method sets the supplied properties for this object.
   *
   * @param array properties - A list of properties to set
@@ -128,7 +195,46 @@ class WellsFargoC
     if(is_array($properties)) //set listed of properties
       foreach($properties as $property => $value)
         if(in_array($property, $this->settableProperties) && property_exists($this, $property))
-          $this->{$property} = $value;
+          if($property == 'requestDirectory' || $property == 'responseDirectory')
+            $this->{$property} = rtrim($value, '/').'/';
+          else
+            $this->{$property} = $value;
+  }
+
+  /*********************
+  * End Public Methods *
+  *********************/
+
+  /********************
+  * Protected Methods *
+  ********************/
+
+  /**
+  * This method gets the request directory.
+  *
+  * @return string
+  */
+
+  protected function getRequestDirectory()
+  {
+    if($this->requestDirectory)
+      return $this->requestDirectory;
+
+    return dirname(__FILE__).'/'.$this->requestDirectoryDefault;
+  }
+
+  /**
+  * This method gets the response directory.
+  *
+  * @return string
+  */
+
+  protected function getResponseDirectory()
+  {
+    if($this->responseDirectory)
+      return $this->responseDirectory;
+
+    return dirname(__FILE__).'/'.$this->responseDirectoryDefault;
   }
 
   /**
@@ -205,6 +311,38 @@ class WellsFargoC
   }
 
   /**
+  * This method records the requests that are sent.
+  */
+
+  protected function recordRequest($request, $headers)
+  {
+    $this->requests[$this->requestI] =
+    [
+      'request' => $request,
+      'headers' => $headers
+    ];
+
+    if($this->recordRequest == 'directory')
+      FileC::putContents(implode(PHP_EOL, $headers).PHP_EOL.PHP_EOL.str_replace('><', '>'.PHP_EOL.'<', $request), $this->unique.'-request.php', $this->getRequestDirectory());
+  }
+
+  /**
+  * This method records the responses that come back.
+  */
+
+  protected function recordResponse($response, $headers)
+  {
+    $this->responses[$this->requestI] =
+    [
+      'response' => $response,
+      'headers' => $headers
+    ];
+
+    if($this->recordResponse == 'directory')
+      FileC::putContents(var_export($headers, true).PHP_EOL.PHP_EOL.str_replace('><', '>'.PHP_EOL.'<', $response), $this->unique.'-response.php', $this->getResponseDirectory());
+  }
+
+  /**
   * This method verifies required data is set, valid, and prepares it to be sent in a request.
   *
   * @return bool - If errors: false Else: true
@@ -253,18 +391,12 @@ class WellsFargoC
       $this->errors[$this->requestI]['merchantNumber'] = 'A merchant number must be supplied.';
 
     //password
-    if(!$this->password && defined('WELLS_FARGO_PASSWORD'))
-      $this->password = WELLS_FARGO_PASSWORD;
-
     if(!strlen($this->password))
       $this->errors[$this->requestI]['password'] = 'A password has not been set.';
     else if(!strlen(preg_replace('/[\s]+/', '', $this->password)))
       $this->errors[$this->requestI]['password'] = 'Invalid password.';
 
     //username
-    if(!$this->username && defined('WELLS_FARGO_USERNAME'))
-      $this->username = WELLS_FARGO_USERNAME;
-
     if(!strlen($this->username))
       $this->errors[$this->requestI]['username'] = 'A username has not been set.';
     else if(!strlen(preg_replace('/[\s]+/', '', $this->username)))
@@ -272,10 +404,6 @@ class WellsFargoC
 
     //wsdl url
     if(strtolower($this->wsdlUrlToUse) == 'production')
-      $this->wsdlUrl = $this->wsdlUrlProduction;
-    else if(strtolower($this->wsdlUrlToUse) == 'test')
-      $this->wsdlUrl = $this->wsdlUrlTest;
-    else if(defined('WELLS_FARGO_WSDL_URL_TO_USE') && ($this->wsdlUrlToUse = WELLS_FARGO_WSDL_URL_TO_USE) && strtolower($this->wsdlUrlToUse) == 'production')
       $this->wsdlUrl = $this->wsdlUrlProduction;
     else
       $this->wsdlUrl = $this->wsdlUrlTest;
@@ -300,6 +428,7 @@ class WellsFargoC
   protected function sendRequest($transationCode, $amount, $planNumber, $ticketNumber = null, $authorizationNumber = '000000')
   {
     ++$this->requestI;
+    $this->unique = substr(\FormatC::number(microtime(true)), -12);
 
     if(($requestData = $this->prepareRequestData($amount, $planNumber, $ticketNumber, $authorizationNumber)) && $this->requiredDataIsSet())
     {
@@ -313,7 +442,7 @@ class WellsFargoC
     '</ns1:submitTransaction>'.
     '<multiRef xmlns:ns2="http://model.webservices.retaildealer.wff.com" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" id="id0" soapenc:root="0" soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xsi:type="ns2:Transaction">'.
       '<systemCode xsi:type="xsd:string"/>'.
-      '<uuid xsi:type="xsd:string">111222333444</uuid>'.
+      '<uuid xsi:type="xsd:string">'.$this->unique.'</uuid>'.
       '<manufacturerNumber xsi:type="xsd:string"/>'.
       '<setupPassword xsi:type="xsd:string">'.$this->password.'</setupPassword>'.
       '<amount xsi:type="xsd:string">'.$amount.'</amount>'.
@@ -344,8 +473,8 @@ class WellsFargoC
       $soap_do = curl_init();
 
       curl_setopt($soap_do, CURLOPT_URL,            $this->wsdlUrl);
-      curl_setopt($soap_do, CURLOPT_CONNECTTIMEOUT, 10);
-      curl_setopt($soap_do, CURLOPT_TIMEOUT,        10);
+      curl_setopt($soap_do, CURLOPT_CONNECTTIMEOUT, 60);
+      curl_setopt($soap_do, CURLOPT_TIMEOUT,        60);
       curl_setopt($soap_do, CURLOPT_RETURNTRANSFER, true);
       curl_setopt($soap_do, CURLOPT_SSL_VERIFYPEER, false);
       curl_setopt($soap_do, CURLOPT_SSL_VERIFYHOST, false);
@@ -353,18 +482,20 @@ class WellsFargoC
       curl_setopt($soap_do, CURLOPT_POSTFIELDS,     $xml);
       curl_setopt($soap_do, CURLOPT_HTTPHEADER,     $header);
 
+      $this->recordRequest($xml, $header);
       $r = curl_exec($soap_do);
 
       if($r === false)
       {
+        $this->recordResponse(curl_error($soap_do), curl_getinfo($soap_do));
         $this->errors[$this->requestI]['soap'] = curl_error($soap_do);
         curl_close($soap_do);
       }
       else
       {
+        $this->recordResponse($r, curl_getinfo($soap_do));
         $contentType = curl_getinfo($soap_do, CURLINFO_CONTENT_TYPE);
         curl_close($soap_do);
-        //\CmsC::output($r);
 
         if(preg_match('/text\/xml/i', $contentType))
           return $this->xml2Dictionary($r);
@@ -385,7 +516,7 @@ class WellsFargoC
 
   protected function xml2Dictionary($response)
   {
-    $this->responses[$this->requestI] = $response = array_value
+    $response = array_value
     (
       '[soapenvBody][ns1submitTransactionResponse][submitTransactionReturn]', (json_decode
       (
@@ -404,14 +535,19 @@ class WellsFargoC
     {
       switch(array_value('transactionStatus', $response))
       {
-        case 'A1':
+        case 'A1': //approved
           return $response;
           break;
-        case 'A0':
+        case 'A0': //denied
+          /*
           $this->errors[$this->requestI]['returnStatus'] = array_value('transactionMessage', $response);
 
-          if($this->errors[$this->requestI]['returnStatus'] == 'AUTH DENIED')
+          if($this->errors[$this->requestI]['returnStatus'] == 'AUTH DENIED' || $this->errors[$this->requestI]['returnStatus'] == 'INVALD FOR MERCH')
             $this->errors[$this->requestI]['returnStatus'] = 'Transaction was declined.  Please verify the account number or use a different one and try again.';
+          */
+
+          $this->errors[$this->requestI]['returnStatus'] = 'Transaction was declined.  Please verify the account number or use a different one and try again.';
+
           break;
         case 'A2':
           $this->errors[$this->requestI]['returnStatus'] = array_value('transactionMessage', $response);

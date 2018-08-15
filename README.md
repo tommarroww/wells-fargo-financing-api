@@ -10,7 +10,7 @@ The API can manage these types of transactions:
 ~~~~
 use WellsFargo as WF;
 
-define('SERVER_ROOT', '/home/user/littletzar/');
+define('SERVER_ROOT', '/home/user/littletzar/public_html/');
 
 require SERVER_ROOT.'addons/wells-fargo/wells-fargo.class.php';
 
@@ -30,7 +30,7 @@ These properties can be set or changed later as follows:
 ~~~~
 use WellsFargo as WF;
 
-define('SERVER_ROOT', '/home/user/littletzar/');
+define('SERVER_ROOT', '/home/user/littletzar/public_html/');
 
 require SERVER_ROOT.'addons/wells-fargo/wells-fargo.class.php';
 
@@ -50,7 +50,7 @@ It works best to define the **Merchant Number**, **Username**, and **Password** 
 ~~~~
 use WellsFargo as WF;
 
-define('SERVER_ROOT', '/home/user/littletzar/');
+define('SERVER_ROOT', '/home/user/littletzar/public_html/');
 define('WELLS_FARGO_MERCHANT_NUMBER', '1234567890');
 define('WELLS_FARGO_PASSWORD', 'pi47*kl');
 define('WELLS_FARGO_USERNAME', 'm67543');
@@ -140,6 +140,20 @@ These properties may be set or changed at any time:
   - May be set by defining the global: define('WELLS_FARGO_MERCHANT_NUMBER' '1234567890')
 - password
   - May be set by defining the global: define('WELLS_FARGO_PASSWORD' 'pi47*kl')
+- recordRequest
+  - Set to 'directory' to record the request to the filesystem
+  - May be set by defining the global: define('WELLS_FARGO_RECORD_REQUEST' 'directory')
+- recordResponse
+  - Set to 'directory' to record the response to the filesystem
+  - May be set by defining the global: define('WELLS_FARGO_RECORD_RESPONSE' 'directory')
+- requestDirectory
+  - Use the absolute path to the directory
+  - May be set by defining the global: define('WELLS_FARGO_REQUEST_DIRECTORY' '/home/user/littletzar/private_html/files/wells-fargo/')
+  - Default directory: wells-fargo/responses/
+- responseDirectory
+  - Use the absolute path to the directory
+  - May be set by defining the global: define('WELLS_FARGO_RESPONSE_DIRECTORY' '/home/user/littletzar/private_html/files/wells-fargo/')
+  - Default directory: wells-fargo/requests/
 - username
   - May be set by defining the global: define('WELLS_FARGO_USERNAME' 'm67543')
 - wsdlUrlToUse
@@ -149,3 +163,16 @@ These properties may be set or changed at any time:
 
 ## Data Sanitization and Error Handling
 All data is sanitized before it is sent to Wells Fargo.  It is also tested to verify that it meets the general requirements as specified by Wells Fargo.  If any data is not valid, an error is generated describing why and **_false_** is returned.
+
+## Raw Request and Response Data
+The request and response data can be captured for every transaction.  The data that is captured is the header and request/ response text.  
+
+### Request Data
+To record the request data to the filesystem, set the **_recordRequest_** property to **_true_**.  To record it to another medium, set  **_recordRequest_** to anything else.  Retrieve the request data by calling **_getRequest()_**.  Like **_getErrors_**, if more than one transaction has been sent, the request for the most recent transaction will be returned.  To retrieve a request from other transactions, pass an integer >= 0.  A dictionary will be returned with indices '**request**' and '**header**'.
+
+If recording the requests to the filesystem, set the **_requestDirectory_** property to the absolute path of the desired directory.  The default directory is: **_wells-fargo/requests_**.  If the directory does not exits, the API will attempt to create it.
+
+### Response Data
+To record the response data to the filesystem, set the **_recordResponse_** property to **_true_**.  To record it to another medium, set  **_recordResponse_** to anything else.  Retrieve the response data by calling **_getResponse()_**.  Like **_getErrors_**, if more than one transaction has been sent, the response for the most recent transaction will be returned.  To retrieve a response from other transactions, pass an integer >= 0.  A dictionary will be returned with indices '**response**' and '**header**'.
+
+If recording the responses to the filesystem, set the **_responseDirectory_** property to the absolute path of the desired directory.  The default directory is: **_wells-fargo/responses_**.  If the directory does not exits, the API will attempt to create it.
